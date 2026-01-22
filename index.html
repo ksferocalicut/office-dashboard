@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>RO KOZHIKODE URBAN</title>
+<title>Office Business Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
@@ -19,7 +22,7 @@ h2 {
 }
 
 .dashboard {
-  max-width: 900px;
+  max-width: 1000px;
   margin: auto;
   padding: 10px;
   display: grid;
@@ -51,6 +54,15 @@ h2 {
 .amber { color: #f39c12; }
 .red   { color: #e74c3c; }
 
+.chart-card {
+  grid-column: 1 / -1;
+}
+
+canvas {
+  max-width: 320px;
+  margin: auto;
+}
+
 footer {
   text-align: center;
   font-size: 12px;
@@ -62,9 +74,10 @@ footer {
 
 <body>
 
-<h2>📊 RO KOZHIKODE URBAN</h2>
+<h2>📊 Office Business Dashboard</h2>
 
 <div class="dashboard">
+
   <div class="card">
     <div class="value" id="target">--</div>
     <div class="label">Chitty Target</div>
@@ -84,6 +97,15 @@ footer {
     <div class="value" id="aqi">--</div>
     <div class="label">Asset Quality Index</div>
   </div>
+
+  <!-- PIE CHART -->
+  <div class="card chart-card">
+    <div class="label" style="margin-bottom:10px;font-weight:600;">
+      Chitty Business Progress
+    </div>
+    <canvas id="chittyChart"></canvas>
+  </div>
+
 </div>
 
 <footer id="updated">Last updated: --</footer>
@@ -100,7 +122,6 @@ fetch(csvUrl)
   .then(csv => {
     const lines = csv.trim().split(/\r?\n/);
 
-    // Row 1 = headers, Row 2 = values
     const headers = lines[0].split(",");
     const values  = lines[1].split(",");
 
@@ -112,6 +133,7 @@ fetch(csvUrl)
     const target = data["Chitty Target"];
     const done   = data["Business Done"];
     const aqi    = data["Asset Quality Index"];
+    const remaining = target - done;
 
     document.getElementById("target").textContent = formatNumber(target);
     document.getElementById("done").textContent   = formatNumber(done);
@@ -125,6 +147,25 @@ fetch(csvUrl)
       percent >= 90 ? "green" :
       percent >= 75 ? "amber" : "red"
     );
+
+    // PIE CHART
+    new Chart(document.getElementById("chittyChart"), {
+      type: "pie",
+      data: {
+        labels: ["Business Done", "Remaining Target"],
+        datasets: [{
+          data: [done, remaining],
+          backgroundColor: ["#27ae60", "#e74c3c"]
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            position: "bottom"
+          }
+        }
+      }
+    });
 
     document.getElementById("updated").textContent =
       "Last updated: " + new Date().toLocaleString("en-IN");
