@@ -2,44 +2,61 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Office Dashboard</title>
+<title>Office Business Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   background: #f4f6f8;
 }
+
 h2 {
   text-align: center;
-  margin: 12px 0;
+  padding: 12px 0;
+  margin: 0;
 }
+
 .dashboard {
   max-width: 900px;
   margin: auto;
+  padding: 10px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 15px;
-  padding: 10px;
 }
+
 .card {
-  background: white;
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 14px;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
 }
+
 .value {
   font-size: 32px;
-  font-weight: bold;
+  font-weight: 700;
+  color: #2c3e50;
 }
+
 .label {
+  margin-top: 6px;
   font-size: 14px;
-  color: #666;
+  color: #777;
 }
+
 .green { color: #27ae60; }
-.red { color: #e74c3c; }
+.amber { color: #f39c12; }
+.red   { color: #e74c3c; }
+
+footer {
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+  padding: 6px;
+}
 </style>
 </head>
 
@@ -52,67 +69,67 @@ h2 {
     <div class="value" id="target">--</div>
     <div class="label">Chitty Target</div>
   </div>
+
   <div class="card">
     <div class="value" id="done">--</div>
     <div class="label">Business Done</div>
   </div>
+
   <div class="card">
     <div class="value" id="percent">--%</div>
     <div class="label">% Achieved</div>
   </div>
+
   <div class="card">
     <div class="value" id="aqi">--</div>
     <div class="label">Asset Quality Index</div>
   </div>
 </div>
 
+<footer id="updated">Last updated: --</footer>
+
 <script>
 const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSU_mymXfqLld3abW0IvcDqwaFPmF8dzxF2YWHVsyAuzbGM2GgZbQzd3GRYDMHa8gxtt3WWGBsvtk8S/pub?gid=1757051883&single=true&output=csv";
 
+function formatNumber(num) {
+  return num.toLocaleString("en-IN");
+}
+
 fetch(csvUrl)
-  .then(r => r.text())
+  .then(res => res.text())
   .then(csv => {
-    console.log("RAW CSV:", csv);
+    const lines = csv.trim().split(/\r?\n/);
 
-    const rows = csv.split(/\r?\n/).map(r => r.split(","));
-    console.log("ROWS:", rows);
+    // Row 1 = headers, Row 2 = values
+    const headers = lines[0].split(",");
+    const values  = lines[1].split(",");
 
-    const map = {};
-
-    // Find metric name & value dynamically
-    rows.forEach(row => {
-      row.forEach((cell, idx) => {
-        const key = cell.replace(/"/g,"").trim();
-        const next = row[idx + 1];
-
-        if (!next) return;
-
-        const val = Number(next.replace(/"/g,"").replace(/,/g,""));
-
-        if (!isNaN(val)) {
-          map[key] = val;
-        }
-      });
+    const data = {};
+    headers.forEach((h, i) => {
+      data[h.trim()] = Number(values[i].replace(/,/g, ""));
     });
 
-    console.log("MAP:", map);
+    const target = data["Chitty Target"];
+    const done   = data["Business Done"];
+    const aqi    = data["Asset Quality Index"];
 
-    const target = map["Chitty Target"];
-    const done = map["Business Done"];
-    const aqi = map["Asset Quality Index"];
+    document.getElementById("target").textContent = formatNumber(target);
+    document.getElementById("done").textContent   = formatNumber(done);
+    document.getElementById("aqi").textContent    = aqi;
 
-    document.getElementById("target").textContent = target ?? "--";
-    document.getElementById("done").textContent = done ?? "--";
-    document.getElementById("aqi").textContent = aqi ?? "--";
+    const percent = ((done / target) * 100).toFixed(1);
+    const percentEl = document.getElementById("percent");
+    percentEl.textContent = percent + "%";
 
-    if (target && done) {
-      const p = ((done / target) * 100).toFixed(1);
-      const el = document.getElementById("percent");
-      el.textContent = p + "%";
-      el.className = "value " + (p >= 75 ? "green" : "red");
-    }
+    percentEl.classList.add(
+      percent >= 90 ? "green" :
+      percent >= 75 ? "amber" : "red"
+    );
+
+    document.getElementById("updated").textContent =
+      "Last updated: " + new Date().toLocaleString("en-IN");
   })
-  .catch(e => console.error("FETCH FAILED:", e));
+  .catch(err => console.error("CSV fetch failed:", err));
 </script>
 
 </body>
