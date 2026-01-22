@@ -2,79 +2,157 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>RO KOZHIKODE URBAN</title>
+<title>KSFE Business Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Chart.js CDN -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+:root {
+  --ksfe-green: #0b6b3a;
+  --ksfe-green-dark: #084f2b;
+  --ksfe-gold: #c9a227;
+  --danger: #c0392b;
+  --bg: #f2f6f4;
+  --card-bg: #ffffff;
+}
+
+/* RESET */
+* { box-sizing: border-box; }
+
 body {
   margin: 0;
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f4f6f8;
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  background: var(--bg);
 }
 
-h2 {
-  text-align: center;
-  padding: 12px 0;
-  margin: 0;
+/* HEADER */
+header {
+  background: linear-gradient(90deg, var(--ksfe-green), var(--ksfe-green-dark));
+  color: white;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.dashboard {
-  max-width: 1000px;
-  margin: auto;
-  padding: 10px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.header-left {
+  display: flex;
+  align-items: center;
   gap: 15px;
 }
 
-.card {
-  background: #ffffff;
-  border-radius: 14px;
+header img {
+  height: 48px;
+  background: white;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+header .title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* STATUS BADGE */
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.status-excellent { background: #1e8449; }
+.status-good { background: var(--ksfe-gold); color: #1f2d2a; }
+.status-attention { background: var(--danger); }
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0,0,0,0.2); }
+  70% { box-shadow: 0 0 0 10px rgba(0,0,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+}
+
+/* DASHBOARD GRID */
+.dashboard {
+  max-width: 1200px;
+  margin: auto;
   padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+/* CARDS */
+.card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 24px 16px;
   text-align: center;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  position: relative;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 5px;
+  width: 100%;
+  background: var(--ksfe-green);
+}
+
+.card.gold::before {
+  background: var(--ksfe-gold);
 }
 
 .value {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--ksfe-green);
 }
 
 .label {
   margin-top: 6px;
   font-size: 14px;
-  color: #777;
+  color: #666;
 }
 
-.green { color: #27ae60; }
-.amber { color: #f39c12; }
-.red   { color: #e74c3c; }
-
+/* CHART */
 .chart-card {
   grid-column: 1 / -1;
 }
 
 canvas {
-  max-width: 320px;
+  max-width: 360px;
   margin: auto;
 }
 
+/* FOOTER */
 footer {
   text-align: center;
   font-size: 12px;
-  color: #888;
-  padding: 6px;
+  color: #777;
+  padding: 12px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>📊 Business Dashboard</h2>
+<header>
+  <div class="header-left">
+    <img src="https://upload.wikimedia.org/wikipedia/en/5/5f/KSFE_Logo.png" alt="KSFE Logo">
+    <div class="title">KERALA STATE FINANCIAL ENTERPRISES – BUSINESS DASHBOARD</div>
+  </div>
+  <div id="statusBadge" class="status-badge">STATUS</div>
+</header>
 
 <div class="dashboard">
 
@@ -88,7 +166,7 @@ footer {
     <div class="label">Business Done</div>
   </div>
 
-  <div class="card">
+  <div class="card gold">
     <div class="value" id="percent">--%</div>
     <div class="label">% Achieved</div>
   </div>
@@ -98,9 +176,13 @@ footer {
     <div class="label">Asset Quality Index</div>
   </div>
 
-  <!-- PIE CHART -->
+  <div class="card gold">
+    <div class="value" id="aqiRank">--</div>
+    <div class="label">AQI Rank</div>
+  </div>
+
   <div class="card chart-card">
-    <div class="label" style="margin-bottom:10px;font-weight:600;">
+    <div class="label" style="font-weight:600;margin-bottom:10px;">
       Chitty Business Progress
     </div>
     <canvas id="chittyChart"></canvas>
@@ -111,7 +193,8 @@ footer {
 <footer id="updated">Last updated: --</footer>
 
 <script>
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSU_mymXfqLld3abW0IvcDqwaFPmF8dzxF2YWHVsyAuzbGM2GgZbQzd3GRYDMHa8gxtt3WWGBsvtk8S/pub?gid=1757051883&single=true&output=csv";
+const csvUrl =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSU_mymXfqLld3abW0IvcDqwaFPmF8dzxF2YWHVsyAuzbGM2GgZbQzd3GRYDMHa8gxtt3WWGBsvtk8S/pub?gid=1757051883&single=true&output=csv";
 
 function formatNumber(num) {
   return num.toLocaleString("en-IN");
@@ -121,7 +204,6 @@ fetch(csvUrl)
   .then(res => res.text())
   .then(csv => {
     const lines = csv.trim().split(/\r?\n/);
-
     const headers = lines[0].split(",");
     const values  = lines[1].split(",");
 
@@ -133,44 +215,47 @@ fetch(csvUrl)
     const target = data["Chitty Target"];
     const done   = data["Business Done"];
     const aqi    = data["Asset Quality Index"];
+    const rank   = data["AQI Rank"];
     const remaining = target - done;
 
     document.getElementById("target").textContent = formatNumber(target);
     document.getElementById("done").textContent   = formatNumber(done);
     document.getElementById("aqi").textContent    = aqi;
+    document.getElementById("aqiRank").textContent = rank;
 
     const percent = ((done / target) * 100).toFixed(1);
-    const percentEl = document.getElementById("percent");
-    percentEl.textContent = percent + "%";
+    document.getElementById("percent").textContent = percent + "%";
 
-    percentEl.classList.add(
-      percent >= 90 ? "green" :
-      percent >= 75 ? "amber" : "red"
-    );
+    // LIVE STATUS BADGE
+    const badge = document.getElementById("statusBadge");
+    if (percent >= 90) {
+      badge.textContent = "EXCELLENT";
+      badge.className = "status-badge status-excellent";
+    } else if (percent >= 75) {
+      badge.textContent = "GOOD";
+      badge.className = "status-badge status-good";
+    } else {
+      badge.textContent = "NEEDS ATTENTION";
+      badge.className = "status-badge status-attention";
+    }
 
-    // PIE CHART
     new Chart(document.getElementById("chittyChart"), {
       type: "pie",
       data: {
         labels: ["Business Done", "Remaining Target"],
         datasets: [{
           data: [done, remaining],
-          backgroundColor: ["#27ae60", "#e74c3c"]
+          backgroundColor: ["#0b6b3a", "#c9a227"]
         }]
       },
       options: {
-        plugins: {
-          legend: {
-            position: "bottom"
-          }
-        }
+        plugins: { legend: { position: "bottom" } }
       }
     });
 
     document.getElementById("updated").textContent =
       "Last updated: " + new Date().toLocaleString("en-IN");
-  })
-  .catch(err => console.error("CSV fetch failed:", err));
+  });
 </script>
 
 </body>
